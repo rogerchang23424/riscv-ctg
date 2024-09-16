@@ -113,7 +113,10 @@ OPS = {
     'ppbrrformat': ['rs1', 'rs2', 'rd'],
     'prrformat': ['rs1', 'rs2', 'rd'],
     'prrrformat': ['rs1', 'rs2', 'rs3', 'rd'],
-    'dcasrformat': ['rs1', 'rs2', 'rd']
+    'dcasrformat': ['rs1', 'rs2', 'rd'],
+    'cmpushformat': [],
+    'cmpopformat': ['x1', 'x8', 'x9', 'x18', 'x19', 'x20', 'x21', 'x22', 'x23', 'x24', 'x25', 'x26', 'x27'],
+    'cmmvformat': ['rs1', 'rs2'],
 }
 ''' Dictionary mapping instruction formats to operands used by those formats '''
 
@@ -170,7 +173,10 @@ VALS = {
     'ppbrrformat': '["rs1_val"] + simd_val_vars("rs2", xlen, 8)',
     'prrformat': '["rs1_val", "rs2_val"]',
     'prrrformat': "['rs1_val', 'rs2_val' , 'rs3_val']",
-    'dcasrformat': '["rs1_val", "rs2_val"]'
+    'dcasrformat': '["rs1_val", "rs2_val"]',
+    'cmpushformat': 'cmpp_val_vars() + ["imm_val"]',
+    'cmpopformat': 'cmpp_val_vars() + ["imm_val"]',
+    'cmmvformat': "['rs1_val', 'rs2_val']",
 }
 ''' Dictionary mapping instruction formats to operand value variables used by those formats '''
 
@@ -280,9 +286,13 @@ class Generator():
         self.is_nan_box = is_nan_box
         self.inxFlag = inxFlag
         self.is_sgn_extd = is_sgn_extd
+        self.is_cm_push_pop = False
 
         if opcode in ['sw', 'sh', 'sb', 'lw', 'lhu', 'lh', 'lb', 'lbu', 'ld', 'lwu', 'sd',"jal","beq","bge","bgeu","blt","bltu","bne","jalr","c.jalr","c.jr","flw","fsw","fld","fsd","flh","fsh","c.lbu","c.lhu","c.lh","c.sb","c.sh","c.flw"]:
             self.val_vars = self.val_vars + ['ea_align']
+        if opcode in ['cm.push', 'cm.pop', 'cm.popret', 'cm.popretz']:
+            self.val_vars = self.val_vars + ["rlist_val"]
+            self.is_cm_push_pop = True
         self.template = opnode['template']
         self.opnode = opnode
         # self.stride = opnode['stride']
@@ -764,6 +774,51 @@ class Generator():
                 else:
                     instr[var] = str(self.datasets[var][0])
         return instr
+    
+    def __cmpp_instr__(self, op=None, val=None):
+        cond_str = ''
+        if op:
+            cond_str += op[-1]+', '
+        if val:
+            cond_str += val[-1]
+        instr = {'inst':self.opcode,'index':'0', 'comment':cond_str}
+        if op:
+            for var,reg in zip(self.op_vars,op):
+                instr[var] = str(reg)
+        else:
+            for i,var in enumerate(self.op_vars):
+                instr[var]=self.default_regs[var]
+        if val:
+            for i,var in enumerate(self.val_vars):
+                instr[var] = str(val[i])
+        else:
+            for var in self.val_vars:
+                instr[var] = str(self.datasets[var][0])
+        instr['reg_list'] = ['x27', 'x26', 'x25', 'x24', 'x23', 'x22', 'x21',
+                             'x20', 'x19', 'x18', 'x9', 'x8', 'x1', 'x2', 'x10']
+        return instr
+    
+    def __cmmv_instr__(self, op=None, val=None):
+        cond_str = ''
+        if op:
+            cond_str += op[-1]+', '
+        if val:
+            cond_str += val[-1]
+        instr = {'inst':self.opcode,'index':'0', 'comment':cond_str}
+        if op:
+            for var,reg in zip(self.op_vars,op):
+                instr[var] = str(reg)
+        else:
+            for i,var in enumerate(self.op_vars):
+                instr[var]=self.default_regs[var]
+        if val:
+            for i,var in enumerate(self.val_vars):
+                instr[var] = str(val[i])
+        else:
+            for var in self.val_vars:
+                instr[var] = str(self.datasets[var][0])
+        instr['reg_list'] = ['x10', 'x11']
+        return instr
 
     def gen_inst(self,op_comb, val_comb, cgf):
         '''
@@ -828,6 +883,10 @@ class Generator():
                 instr_dict.append(self.__cj_instr__(op,val))
             elif self.fmt == 'jformat' or self.fmt == 'cjformat':
                 instr_dict.append(self.__jfmt_instr__(op,val))
+            elif self.fmt == 'cmpushformat' or self.fmt == 'cmpopformat':
+                instr_dict.append(self.__cmpp_instr__(op,val))
+            elif self.fmt == 'cmmvformat':
+                instr_dict.append(self.__cmmv_instr__(op,val))
             else:
                 instr_dict.append(self.__instr__(op,val))
         op = None
@@ -846,6 +905,10 @@ class Generator():
                 instr_dict.append(self.__cj_instr__(op,val))
             elif self.fmt == 'jformat':
                 instr_dict.append(self.__jfmt_instr__(op,val))
+            elif self.fmt == 'cmpushformat' or self.fmt == 'cmpopformat':
+                instr_dict.append(self.__cmpp_instr__(op,val))
+            elif self.fmt == 'cmmvformat':
+                instr_dict.append(self.__cmmv_instr__(op,val))
             else:
                 instr_dict.append(self.__instr__(op,val))
 
@@ -1014,6 +1077,8 @@ class Generator():
             stride_sz = eval(suffix)
             template = Template(eval(self.opnode['val']['val_template']))
             width = self.iflen if self.is_fext else self.flen
+            if self.is_cm_push_pop:
+                width = self.xlen
             for instr in instr_dict:
                 if 'rs1' in instr and instr['rs1'] in available_reg:
                     available_reg.remove(instr['rs1'])
@@ -1031,6 +1096,10 @@ class Generator():
                     available_reg.remove(instr['swreg'])
                 if 'testreg' in instr and instr['testreg'] in available_reg:
                     available_reg.remove(instr['testreg'])
+                if 'reg_list' in instr:
+                    for reg in instr['reg_list']:
+                        if reg in available_reg:
+                            available_reg.remove(reg)
                 if len(available_reg) <= 3+len(self.op_vars)+paired_regs:
                     curr_reg = available_reg[0]
                     offset = 0
@@ -1052,7 +1121,10 @@ class Generator():
                                     dval = sgn_extd(instr_dict[i]['rs{0}_sgn_prefix'.format(j)],
                                             instr_dict[i]['rs{0}_val'.format(j)],self.flen,self.iflen)
                                 else:
-                                    dval = (instr_dict[i]['rs{0}_val'.format(j)],width)
+                                    if self.is_cm_push_pop:
+                                        dval = (instr_dict[i][f'{instr_dict[i]["reg_list"][j-1]}_val'],width)
+                                    else:
+                                        dval = (instr_dict[i]['rs{0}_val'.format(j)],width)
                                 if self.is_fext:
                                     instr_dict[i]['flagreg'] = available_reg[1]
                                 instr_dict[i]['val_section'].append(
@@ -1079,7 +1151,10 @@ class Generator():
                                 dval = nan_box(instr_dict[i]['rs{0}_nan_prefix'.format(j)],
                                         instr_dict[i]['rs{0}_val'.format(j)],self.flen,self.iflen)
                             else:
-                                dval = (instr_dict[i]['rs{0}_val'.format(j)],width)
+                                if self.is_cm_push_pop:
+                                    dval = (instr_dict[i][f'{instr_dict[i]["reg_list"][j-1]}_val'],width)
+                                else:
+                                    dval = (instr_dict[i]['rs{0}_val'.format(j)],width)
                             if self.is_fext:
                                 instr_dict[i]['flagreg'] = available_reg[1]
                             instr_dict[i]['val_section'].append(
@@ -1152,6 +1227,10 @@ class Generator():
                 available_reg.remove(instr['rd_hi'])
             if 'testreg' in instr and instr['testreg'] in available_reg:
                 available_reg.remove(instr['testreg'])
+            if 'reg_list' in instr:
+                for reg in instr['reg_list']:
+                    if reg in available_reg:
+                        available_reg.remove(reg)
 
             if len(available_reg) <= 2+len(self.op_vars)+paired_regs:
                 curr_swreg = available_reg[0]
@@ -1225,6 +1304,10 @@ class Generator():
                     available_reg.remove(instr['rd_hi'])
             if 'swreg' in instr and instr['swreg'] in available_reg:
                 available_reg.remove(instr['swreg'])
+            if 'reg_list' in instr:
+                for reg in instr['reg_list']:
+                    if reg in available_reg:
+                        available_reg.remove(reg)
 
             if len(available_reg) <= 2+len(self.op_vars)+paired_regs:
                 curr_testreg = available_reg[0]

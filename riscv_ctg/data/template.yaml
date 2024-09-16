@@ -6,6 +6,7 @@ metadata:
   c_regs: &c_regs "['x'+str(x) for x in range(8,16)]"
   pair_regs: &pair_regs "['x'+str(x) for x in range(2,32 if 'e' not in base_isa else 16, 2 if xlen == 32 else 1)]"
   rv32rv64pair_regs: &rv32rv64pair_regs "['x'+str(x) for x in range(2,30 if 'e' not in base_isa else 16, 2)]"
+  sp8_regs: &sp8_regs "['x8', 'x9', 'x18', 'x19', 'x20', 'x21', 'x22', 'x23']"
 
 aes32dsi:
   sig:
@@ -12661,3 +12662,170 @@ ssrdp_u:
     #define ZICFISS_SETUP_DONE 1
     #endif
     TEST_SSRDP_OP(ssrdp, $rd, $swreg, $testreg, Umode)
+
+cm.push:
+  sig:
+    stride: 1
+    sz: 'XLEN*2'
+  xlen: [32,64]
+  std_op:
+  isa:
+    - I_Zca_Zcmp
+  x1_val_data: 'gen_sign_dataset(xlen)'
+  x8_val_data: 'gen_sign_dataset(xlen)'
+  x9_val_data: 'gen_sign_dataset(xlen)'
+  x18_val_data: 'gen_sign_dataset(xlen)'
+  x19_val_data: 'gen_sign_dataset(xlen)'
+  x20_val_data: 'gen_sign_dataset(xlen)'
+  x21_val_data: 'gen_sign_dataset(xlen)'
+  x22_val_data: 'gen_sign_dataset(xlen)'
+  x23_val_data: 'gen_sign_dataset(xlen)'
+  x24_val_data: 'gen_sign_dataset(xlen)'
+  x25_val_data: 'gen_sign_dataset(xlen)'
+  x26_val_data: 'gen_sign_dataset(xlen)'
+  x27_val_data: 'gen_sign_dataset(xlen)'
+  formattype: 'cmpushformat'
+  imm_val_data: '[0,1,2,3]'
+  rlist_val_data: '[4,5,6,7,8,9,10,11,12,13,14,15]'
+  template: |-
+
+    //
+    TEST_CM_PUSH($inst, $swreg, $testreg, $rlist_val, $imm_val, $x8_val, $x9_val, $x18_val, $x19_val, $x20_val, $x21_val, $x22_val, $x23_val, $x24_val, $x25_val, $x26_val, $x27_val, $offset)
+
+cm.pop:
+  sig:
+    stride: 1
+    sz: 'XLEN*2'
+  val:
+    stride: 1
+    sz: 'XLEN*2'
+    val_template: "'ZERO_EXTEND($val,XLEN,XLEN)'"
+    load_instr: "LREG"
+  xlen: [32,64]
+  std_op:
+  isa:
+    - I_Zca_Zcmp
+  x1_val_data: 'gen_sign_dataset(xlen)'
+  x8_val_data: 'gen_sign_dataset(xlen)'
+  x9_val_data: 'gen_sign_dataset(xlen)'
+  x18_val_data: 'gen_sign_dataset(xlen)'
+  x19_val_data: 'gen_sign_dataset(xlen)'
+  x20_val_data: 'gen_sign_dataset(xlen)'
+  x21_val_data: 'gen_sign_dataset(xlen)'
+  x22_val_data: 'gen_sign_dataset(xlen)'
+  x23_val_data: 'gen_sign_dataset(xlen)'
+  x24_val_data: 'gen_sign_dataset(xlen)'
+  x25_val_data: 'gen_sign_dataset(xlen)'
+  x26_val_data: 'gen_sign_dataset(xlen)'
+  x27_val_data: 'gen_sign_dataset(xlen)'
+  formattype: 'cmpopformat'
+  imm_val_data: '[0,1,2,3]'
+  rlist_val_data: '[4,5,6,7,8,9,10,11,12,13,14,15]'
+  template: |-
+
+    //
+    TEST_CM_POP($inst, $swreg, $testreg, $rlist_val, $imm_val, $valaddr_reg, $val_offset, $offset)
+
+cm.popret:
+  sig:
+    stride: 1
+    sz: 'XLEN*2'
+  val:
+    stride: 1
+    sz: 'XLEN*2'
+    val_template: "'ZERO_EXTEND($val,XLEN,XLEN)'"
+    load_instr: "LREG"
+  xlen: [32,64]
+  std_op:
+  isa:
+    - I_Zca_Zcmp
+  x1_val_data: '[0]'
+  x8_val_data: 'gen_sign_dataset(xlen)'
+  x9_val_data: 'gen_sign_dataset(xlen)'
+  x18_val_data: 'gen_sign_dataset(xlen)'
+  x19_val_data: 'gen_sign_dataset(xlen)'
+  x20_val_data: 'gen_sign_dataset(xlen)'
+  x21_val_data: 'gen_sign_dataset(xlen)'
+  x22_val_data: 'gen_sign_dataset(xlen)'
+  x23_val_data: 'gen_sign_dataset(xlen)'
+  x24_val_data: 'gen_sign_dataset(xlen)'
+  x25_val_data: 'gen_sign_dataset(xlen)'
+  x26_val_data: 'gen_sign_dataset(xlen)'
+  x27_val_data: 'gen_sign_dataset(xlen)'
+  formattype: 'cmpopformat'
+  imm_val_data: '[0,1,2,3]'
+  rlist_val_data: '[4,5,6,7,8,9,10,11,12,13,14,15]'
+  template: |-
+
+    //
+    TEST_CM_POPRET($inst, $swreg, $testreg, $rlist_val, $imm_val, $valaddr_reg, $val_offset, $offset)
+
+cm.popretz:
+  sig:
+    stride: 1
+    sz: 'XLEN*2'
+  val:
+    stride: 1
+    sz: 'XLEN*2'
+    val_template: "'ZERO_EXTEND($val,XLEN,XLEN)'"
+    load_instr: "LREG"
+  xlen: [32,64]
+  std_op:
+  isa:
+    - I_Zca_Zcmp
+  x1_val_data: '[0]'
+  x8_val_data: 'gen_sign_dataset(xlen)'
+  x9_val_data: 'gen_sign_dataset(xlen)'
+  x18_val_data: 'gen_sign_dataset(xlen)'
+  x19_val_data: 'gen_sign_dataset(xlen)'
+  x20_val_data: 'gen_sign_dataset(xlen)'
+  x21_val_data: 'gen_sign_dataset(xlen)'
+  x22_val_data: 'gen_sign_dataset(xlen)'
+  x23_val_data: 'gen_sign_dataset(xlen)'
+  x24_val_data: 'gen_sign_dataset(xlen)'
+  x25_val_data: 'gen_sign_dataset(xlen)'
+  x26_val_data: 'gen_sign_dataset(xlen)'
+  x27_val_data: 'gen_sign_dataset(xlen)'
+  formattype: 'cmpopformat'
+  imm_val_data: '[0,1,2,3]'
+  rlist_val_data: '[4,5,6,7,8,9,10,11,12,13,14,15]'
+  template: |-
+
+    //
+    TEST_CM_POPRETZ($inst, $swreg, $testreg, $rlist_val, $imm_val, $valaddr_reg, $val_offset, $offset)
+
+cm.mvsa01:
+  sig:
+    stride: 2
+    sz: 'XLEN/8'
+  rs1_op_data: *sp8_regs
+  rs2_op_data: *sp8_regs
+  xlen: [32,64]
+  std_op:
+  isa: 
+    - I_Zca_Zcmp
+  formattype: 'cmmvformat'
+  rs1_val_data: 'gen_sign_dataset(xlen)+gen_sp_dataset(xlen)'
+  rs2_val_data: 'gen_sign_dataset(xlen)+gen_sp_dataset(xlen)'
+  template: |-
+
+    // opcode: $inst; op1:$rs1; op2:$rs2; op1val:$rs1_val; op2val:$rs2_val
+    TEST_CMMV_OP($inst, $rs1, $rs2, $rs1_val, $rs2_val, x10, x11, $swreg, $offset, $testreg)
+
+cm.mva01s:
+  sig:
+    stride: 2
+    sz: 'XLEN/8'
+  rs1_op_data: *sp8_regs
+  rs2_op_data: *sp8_regs
+  xlen: [32,64]
+  std_op:
+  isa: 
+    - I_Zca_Zcmp
+  formattype: 'cmmvformat'
+  rs1_val_data: 'gen_sign_dataset(xlen)+gen_sp_dataset(xlen)'
+  rs2_val_data: 'gen_sign_dataset(xlen)+gen_sp_dataset(xlen)'
+  template: |-
+
+    // opcode: $inst; op1:$rs1; op2:$rs2; op1val:$rs1_val; op2val:$rs2_val
+    TEST_CMMV_OP($inst, x10, x11, $rs1_val, $rs2_val, $rs1, $rs2, $swreg, $offset, $testreg)

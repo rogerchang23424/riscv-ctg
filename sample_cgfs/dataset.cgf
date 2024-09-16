@@ -246,6 +246,16 @@ datasets:
     x30: 0
     x31: 0
 
+  sp8_regs: &sp8_regs
+    x8: 0
+    x9: 0
+    x18: 0
+    x19: 0
+    x20: 0
+    x21: 0
+    x22: 0
+    x23: 0
+
   cbfmt_immval_sgn: &cbfmt_immval_sgn
     'imm_val == (-2**(6-1))': 0
     'imm_val == 0': 0

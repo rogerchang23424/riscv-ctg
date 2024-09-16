@@ -25,6 +25,15 @@ def simd_val_vars(operand, xlen, bit_width):
         val_list += [f"{operand}_{sz}{i}_val"]
     return val_list
 
+def cmpp_val_vars():
+    '''
+    This function generates the operand value variables for reigsters of CMPP format.
+
+    :return: a list containing the element value variables for reigsters of CMPP format.
+    '''
+    reg_list = ["x1", "x8", "x9", "x18", "x19", "x20", "x21", "x22", "x23", "x24", "x25", "x26", "x27"]
+    return [f"{reg_name}_val" for reg_name in reg_list]
+
 def get_fmt_sz(bit_width):
     if bit_width == 8:
         fmt = f"#02x"

@@ -52,7 +52,10 @@ INSTR_FORMAT = {
     'ppbrrformat' : '$instr $rd, $rs1, $rs2',
     'prrformat'   : '$instr ',
     'prrrformat'  : '$instr',
-    'dcasrformat'   : '$instr '
+    'dcasrformat'   : '$instr ',
+    'cmpushformat': '$instr ',
+    'cmpopformat': '$instr ',
+    'cmmvformat': '$instr $rs1 $rs2',
 }
 '''Dictionary to store instruction formats'''
 
